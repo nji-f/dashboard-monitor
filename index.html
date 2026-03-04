@@ -8,7 +8,7 @@
         :root { --bg: #0d0d0f; --card: #1a1a1d; --blue: #00d4ff; --green: #00ff41; --red: #ff3131; --text: #e0e0e0; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 500px; }
-        h1 { font-size: 1.1rem; color: var(--blue); text-align: center; letter-spacing: 3px; margin-bottom: 25px; }
+        h1 { font-size: 1.1rem; color: var(--blue); text-align: center; letter-spacing: 2px; margin-bottom: 25px; text-shadow: 0 0 10px var(--blue); }
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
         .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); text-align: center; }
         .full { grid-column: span 2; }
@@ -23,7 +23,7 @@
 <body>
 
 <div class="container">
-    <h1>NJI MONITOR</h1>
+    <h1>ASTAVVIP MONITOR</h1>
     <div class="dashboard">
         <div class="card full"><div>SERVER STATUS</div><div id="status" class="stat">--</div></div>
         <div class="card"><div>CPU</div><div id="cpu" class="stat" style="color: var(--blue)">0%</div></div>
@@ -47,14 +47,19 @@
         try {
             const res = await fetch('/api/get-auth');
             const result = await res.json();
-            if (!result.data) throw new Error("Gagal ambil token");
+            
+            // Pastikan API membalas data sesuai domain astavvip-tech.xyz
+            if (!result.data || !result.data.socket) {
+                appendLog("Gagal mengambil data socket.");
+                return;
+            }
 
             const token = result.data.token;
             let wsUrl = result.data.socket;
 
-            // Jika masih gagal tanpa VPN, kita paksa hapus port 8080
+            // Bypass jika provider memblokir port 8080
             if (wsUrl.includes(':8080')) {
-                appendLog("Provider memblokir Port 8080. Mencoba jalur alternatif...");
+                appendLog("Port 8080 terdeteksi. Mencoba bypass...");
                 wsUrl = wsUrl.replace(':8080', ''); 
             }
 
@@ -67,12 +72,14 @@
     function connect(url, token) {
         if (socket) socket.close();
         socket = new WebSocket(url);
+        
         socket.onopen = () => {
             socket.send(JSON.stringify({"event":"auth","args":[token]}));
             document.getElementById('socket-status').innerText = "CONNECTED";
             document.getElementById('socket-status').style.color = "var(--green)";
-            appendLog("Koneksi berhasil tanpa VPN!");
+            appendLog("Koneksi ke Astavvip Berhasil!");
         };
+
         socket.onmessage = (e) => {
             const msg = JSON.parse(e.data);
             if (msg.event === 'stats') {
@@ -83,7 +90,11 @@
             }
             if (msg.event === 'console output') appendLog(msg.args[0]);
         };
-        socket.onerror = () => appendLog("Jaringan kamu memblokir akses ke server.");
+
+        socket.onerror = () => {
+            appendLog("Gagal terhubung. Pastikan jaringan mendukung WebSocket.");
+        };
+
         socket.onclose = () => {
             document.getElementById('socket-status').innerText = "DISCONNECTED";
             setTimeout(init, 5000);
@@ -91,7 +102,7 @@
     }
 
     async function power(sig) {
-        appendLog("Signal: " + sig.toUpperCase());
+        appendLog("Mengirim sinyal: " + sig.toUpperCase());
         await fetch('/api/power', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -106,6 +117,7 @@
         b.appendChild(l);
         b.scrollTop = b.scrollHeight;
     }
+
     init();
 </script>
 </body>
