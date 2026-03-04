@@ -5,189 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NJI - System Monitor</title>
     <style>
-        :root {
-            --bg: #0d0d0f;
-            --card: #1a1a1d;
-            --blue: #00d4ff;
-            --green: #00ff41;
-            --red: #ff3131;
-            --text: #e0e0e0;
-            --border: rgba(255, 255, 255, 0.08);
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
-
+        :root { --bg: #0d0d0f; --card: #1a1a1d; --blue: #00d4ff; --green: #00ff41; --red: #ff3131; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { width: 100%; max-width: 500px; }
-
-        h1 {
-            font-size: 1.1rem;
-            color: var(--blue);
-            text-align: center;
-            letter-spacing: 3px;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-        }
-
-        /* Stats Cards */
-        .dashboard {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .card {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
+        h1 { font-size: 1.1rem; color: var(--blue); text-align: center; letter-spacing: 3px; margin-bottom: 25px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); text-align: center; }
         .full { grid-column: span 2; }
-        .label { font-size: 0.65rem; color: #888; letter-spacing: 1px; }
         .stat { font-size: 1.4rem; font-weight: bold; font-family: monospace; margin-top: 5px; }
-
-        /* Buttons */
-        .power-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: #222;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: 0.2s;
-        }
-
-        .btn:active { transform: scale(0.95); opacity: 0.8; }
-
-        /* Terminal */
-        .console {
-            background: #000;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .console-header {
-            background: #1a1a1a;
-            padding: 10px 15px;
-            font-size: 0.7rem;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--border);
-        }
-
-        #log-box {
-            height: 220px;
-            padding: 12px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: var(--green);
-            line-height: 1.5;
-        }
-
-        .online { color: var(--green); }
-        .offline { color: var(--red); }
+        .btn-group { display: flex; gap: 8px; margin-bottom: 20px; }
+        .btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: #222; color: #fff; font-weight: bold; cursor: pointer; font-size: 0.75rem; }
+        .console { background: #000; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+        .header { background: #1a1a1a; padding: 10px 15px; font-size: 0.7rem; display: flex; justify-content: space-between; }
+        #log-box { height: 220px; padding: 12px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: var(--green); line-height: 1.5; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>System Monitor</h1>
-    
+    <h1>NJI MONITOR</h1>
     <div class="dashboard">
-        <div class="card full">
-            <div class="label">SERVER STATUS</div>
-            <div id="status" class="stat">--</div>
-        </div>
-        <div class="card">
-            <div class="label">CPU USAGE</div>
-            <div id="cpu" class="stat" style="color: var(--blue)">0%</div>
-        </div>
-        <div class="card">
-            <div class="label">RAM USAGE</div>
-            <div id="ram" class="stat" style="color: var(--green)">0 MB</div>
-        </div>
+        <div class="card full"><div>SERVER STATUS</div><div id="status" class="stat">--</div></div>
+        <div class="card"><div>CPU</div><div id="cpu" class="stat" style="color: var(--blue)">0%</div></div>
+        <div class="card"><div>RAM</div><div id="ram" class="stat" style="color: var(--green)">0 MB</div></div>
     </div>
-
-    <div class="power-group">
-        <button onclick="sendPower('start')" class="btn">START</button>
-        <button onclick="sendPower('restart')" class="btn">RESTART</button>
-        <button onclick="sendPower('stop')" class="btn">STOP</button>
+    <div class="btn-group">
+        <button onclick="power('start')" class="btn">START</button>
+        <button onclick="power('restart')" class="btn">RESTART</button>
+        <button onclick="power('stop')" class="btn">STOP</button>
     </div>
-
     <div class="console">
-        <div class="console-header">
-            <span>TERMINAL</span>
-            <span id="socket-status" class="offline">OFFLINE</span>
-        </div>
+        <div class="header"><span>TERMINAL</span><span id="socket-status">DISCONNECTED</span></div>
         <div id="log-box"></div>
     </div>
 </div>
 
 <script>
     let socket;
-
     async function init() {
-        appendLog("Checking connection path...");
+        appendLog("Menghubungkan ke API Vercel...");
         try {
             const res = await fetch('/api/get-auth');
             const result = await res.json();
-            
-            if (!result.data) {
-                appendLog("Error: API response invalid.");
-                return;
-            }
+            if (!result.data) throw new Error("Gagal ambil token");
 
             const token = result.data.token;
             let wsUrl = result.data.socket;
 
-            // BYPASS LOGIC: Jika port 8080 diblokir provider, paksa lewat HTTPS standar
+            // Jika masih gagal tanpa VPN, kita paksa hapus port 8080
             if (wsUrl.includes(':8080')) {
-                appendLog("Bypassing restricted port 8080...");
+                appendLog("Provider memblokir Port 8080. Mencoba jalur alternatif...");
                 wsUrl = wsUrl.replace(':8080', ''); 
             }
 
             connect(wsUrl, token);
         } catch (err) {
-            appendLog("System offline. Retrying...");
-            setTimeout(init, 5000);
+            appendLog("Error: " + err.message);
         }
     }
 
     function connect(url, token) {
         if (socket) socket.close();
         socket = new WebSocket(url);
-        
-        const statusEl = document.getElementById('socket-status');
-
         socket.onopen = () => {
             socket.send(JSON.stringify({"event":"auth","args":[token]}));
-            statusEl.innerText = "CONNECTED";
-            statusEl.className = "online";
-            appendLog("Tunnel established. Live stats active.");
+            document.getElementById('socket-status').innerText = "CONNECTED";
+            document.getElementById('socket-status').style.color = "var(--green)";
+            appendLog("Koneksi berhasil tanpa VPN!");
         };
-
         socket.onmessage = (e) => {
             const msg = JSON.parse(e.data);
             if (msg.event === 'stats') {
@@ -198,29 +83,20 @@
             }
             if (msg.event === 'console output') appendLog(msg.args[0]);
         };
-
-        socket.onerror = () => {
-            appendLog("Network restricted. Use different network or VPN if this persists.");
-        };
-
+        socket.onerror = () => appendLog("Jaringan kamu memblokir akses ke server.");
         socket.onclose = () => {
-            statusEl.innerText = "OFFLINE";
-            statusEl.className = "offline";
+            document.getElementById('socket-status').innerText = "DISCONNECTED";
             setTimeout(init, 5000);
         };
     }
 
-    async function sendPower(sig) {
+    async function power(sig) {
         appendLog("Signal: " + sig.toUpperCase());
-        try {
-            await fetch('/api/power', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ signal: sig })
-            });
-        } catch (err) {
-            appendLog("Power command failed.");
-        }
+        await fetch('/api/power', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ signal: sig })
+        });
     }
 
     function appendLog(t) {
@@ -229,9 +105,7 @@
         l.textContent = "> " + t;
         b.appendChild(l);
         b.scrollTop = b.scrollHeight;
-        if (b.childNodes.length > 30) b.removeChild(b.firstChild);
     }
-
     init();
 </script>
 </body>
