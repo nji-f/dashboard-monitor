@@ -1,47 +1,145 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NJI - Final Dashboard</title>
+    <title>NJI - System Monitor</title>
     <style>
-        :root { --bg: #0a0a0c; --card: #161618; --blue: #00d4ff; --green: #00ff41; --red: #ff3131; --text: #e0e0e0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 600px; }
-        h1 { font-size: 1.2rem; color: var(--blue); text-align: center; letter-spacing: 2px; margin-bottom: 25px; text-shadow: 0 0 10px var(--blue); }
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #333; text-align: center; }
-        .stat { font-size: 1.6rem; font-weight: bold; font-family: monospace; margin-top: 5px; }
+        :root {
+            --bg: #0d0d0f;
+            --card: #1a1a1d;
+            --blue: #00d4ff;
+            --green: #00ff41;
+            --red: #ff3131;
+            --text: #e0e0e0;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container { width: 100%; max-width: 500px; }
+
+        h1 {
+            font-size: 1.1rem;
+            color: var(--blue);
+            text-align: center;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        /* Stats Cards */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
         .full { grid-column: span 2; }
-        .power-group { display: flex; gap: 8px; margin-bottom: 20px; }
-        .btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #1a1a1a; color: #fff; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:hover { background: #222; border-color: #666; }
-        .console { background: #000; border-radius: 10px; border: 1px solid #333; overflow: hidden; }
-        .console-header { background: #1a1a1a; padding: 8px 12px; font-size: 0.7rem; display: flex; justify-content: space-between; color: #888; }
-        #log-box { height: 280px; padding: 12px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--green); line-height: 1.5; }
+        .label { font-size: 0.65rem; color: #888; letter-spacing: 1px; }
+        .stat { font-size: 1.4rem; font-weight: bold; font-family: monospace; margin-top: 5px; }
+
+        /* Buttons */
+        .power-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #222;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+
+        .btn:active { transform: scale(0.95); opacity: 0.8; }
+
+        /* Terminal */
+        .console {
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .console-header {
+            background: #1a1a1a;
+            padding: 10px 15px;
+            font-size: 0.7rem;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #log-box {
+            height: 220px;
+            padding: 12px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--green);
+            line-height: 1.5;
+        }
+
+        .online { color: var(--green); }
+        .offline { color: var(--red); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>NJI COMMAND CENTER</h1>
+    <h1>System Monitor</h1>
     
     <div class="dashboard">
-        <div class="card full"><span>SERVER STATUS</span><div id="status">--</div></div>
-        <div class="card"><span>CPU USAGE</span><div id="cpu" class="stat" style="color: var(--blue)">0%</div></div>
-        <div class="card"><span>RAM USAGE</span><div id="ram" class="stat" style="color: var(--green)">0 MB</div></div>
+        <div class="card full">
+            <div class="label">SERVER STATUS</div>
+            <div id="status" class="stat">--</div>
+        </div>
+        <div class="card">
+            <div class="label">CPU USAGE</div>
+            <div id="cpu" class="stat" style="color: var(--blue)">0%</div>
+        </div>
+        <div class="card">
+            <div class="label">RAM USAGE</div>
+            <div id="ram" class="stat" style="color: var(--green)">0 MB</div>
+        </div>
     </div>
 
     <div class="power-group">
-        <button onclick="power('start')" class="btn">START</button>
-        <button onclick="power('restart')" class="btn">RESTART</button>
-        <button onclick="power('stop')" class="btn">STOP</button>
+        <button onclick="sendPower('start')" class="btn">START</button>
+        <button onclick="sendPower('restart')" class="btn">RESTART</button>
+        <button onclick="sendPower('stop')" class="btn">STOP</button>
     </div>
 
     <div class="console">
         <div class="console-header">
-            <span>TERMINAL OUTPUT</span>
-            <span id="socket-status" style="color: var(--red)">OFFLINE</span>
+            <span>TERMINAL</span>
+            <span id="socket-status" class="offline">OFFLINE</span>
         </div>
         <div id="log-box"></div>
     </div>
@@ -51,37 +149,43 @@
     let socket;
 
     async function init() {
-        appendLog("Bypassing provider restriction...");
+        appendLog("Checking connection path...");
         try {
             const res = await fetch('/api/get-auth');
             const result = await res.json();
             
-            // Mengambil URL socket dari data yang muncul di screenshot kamu
-            let wsUrl = result.data.socket;
-            const token = result.data.token;
+            if (!result.data) {
+                appendLog("Error: API response invalid.");
+                return;
+            }
 
-            // STRATEGI BYPASS VPN: Gunakan port 443 jika 8080 diblokir
+            const token = result.data.token;
+            let wsUrl = result.data.socket;
+
+            // BYPASS LOGIC: Jika port 8080 diblokir provider, paksa lewat HTTPS standar
             if (wsUrl.includes(':8080')) {
-                appendLog("Port 8080 detected. Forcing Secure HTTPS Tunnel...");
+                appendLog("Bypassing restricted port 8080...");
                 wsUrl = wsUrl.replace(':8080', ''); 
             }
 
             connect(wsUrl, token);
         } catch (err) {
-            appendLog("System Error: Check Vercel API status.");
+            appendLog("System offline. Retrying...");
+            setTimeout(init, 5000);
         }
     }
 
     function connect(url, token) {
         if (socket) socket.close();
         socket = new WebSocket(url);
+        
         const statusEl = document.getElementById('socket-status');
 
         socket.onopen = () => {
             socket.send(JSON.stringify({"event":"auth","args":[token]}));
-            statusEl.innerText = "CONNECTED (SECURE)";
-            statusEl.style.color = "var(--green)";
-            appendLog("Tunnel established. Monitoring live...");
+            statusEl.innerText = "CONNECTED";
+            statusEl.className = "online";
+            appendLog("Tunnel established. Live stats active.");
         };
 
         socket.onmessage = (e) => {
@@ -95,20 +199,28 @@
             if (msg.event === 'console output') appendLog(msg.args[0]);
         };
 
-        socket.onerror = () => appendLog("Network restricted. Checking alternative path...");
+        socket.onerror = () => {
+            appendLog("Network restricted. Use different network or VPN if this persists.");
+        };
+
         socket.onclose = () => {
-            statusEl.innerText = "RECONNECTING...";
+            statusEl.innerText = "OFFLINE";
+            statusEl.className = "offline";
             setTimeout(init, 5000);
         };
     }
 
-    async function power(sig) {
-        appendLog(`Signal: ${sig.toUpperCase()}`);
-        await fetch('/api/power', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ signal: sig })
-        });
+    async function sendPower(sig) {
+        appendLog("Signal: " + sig.toUpperCase());
+        try {
+            await fetch('/api/power', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ signal: sig })
+            });
+        } catch (err) {
+            appendLog("Power command failed.");
+        }
     }
 
     function appendLog(t) {
@@ -117,7 +229,7 @@
         l.textContent = "> " + t;
         b.appendChild(l);
         b.scrollTop = b.scrollHeight;
-        if (b.childNodes.length > 50) b.removeChild(b.firstChild);
+        if (b.childNodes.length > 30) b.removeChild(b.firstChild);
     }
 
     init();
