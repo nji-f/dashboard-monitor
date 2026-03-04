@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NJI - Project Monitor</title>
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --card: rgba(22, 22, 24, 0.9);
+            --blue: #00d4ff;
+            --green: #00ff41;
+            --red: #ff3131;
+            --text: #e0e0e0;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container { width: 100%; max-width: 800px; }
+
+        /* Header */
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            color: var(--blue);
+            text-shadow: 0 0 15px var(--blue);
+            margin-bottom: 30px;
+        }
+
+        /* Stats Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .card span { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .stat { font-size: 1.8rem; font-weight: bold; margin-top: 8px; font-family: 'Courier New', monospace; }
+
+        /* Power Buttons */
+        .power-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            transition: 0.3s;
+        }
+
+        .btn-start:hover { border-color: var(--green); color: var(--green); box-shadow: 0 0 10px var(--green); }
+        .btn-restart:hover { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 10px var(--blue); }
+        .btn-stop:hover { border-color: var(--red); color: var(--red); box-shadow: 0 0 10px var(--red); }
+
+        /* Console */
+        .console {
+            background: #000;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .console-header {
+            background: #1a1a1a;
+            padding: 8px 15px;
+            font-size: 0.7rem;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #log-box {
+            height: 250px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: var(--green);
+            line-height: 1.4;
+        }
+
+        .status-online { color: var(--green); text-shadow: 0 0 5px var(--green); }
+        .status-offline { color: var(--red); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>NJI COMMAND CENTER</h1>
+
+        <div class="dashboard">
+            <div class="card"><span>Status</span><div id="status" class="stat">--</div></div>
+            <div class="card"><span>CPU</span><div id="cpu" class="stat" style="color: var(--blue)">0%</div></div>
+            <div class="card"><span>RAM</span><div id="ram" class="stat" style="color: var(--green)">0 MB</div></div>
+        </div>
+
+        <div class="power-group">
+            <button onclick="power('start')" class="btn btn-start">START</button>
+            <button onclick="power('restart')" class="btn btn-restart">RESTART</button>
+            <button onclick="power('stop')" class="btn btn-stop">STOP</button>
+        </div>
+
+        <div class="console">
+            <div class="console-header">
+                <span>TERMINAL</span>
+                <span id="socket-status" style="color: var(--red)">DISCONNECTED</span>
+            </div>
+            <div id="log-box"></div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+
+        async function init() {
+            appendLog("Fetching connection token...");
+            try {
+                const res = await fetch('/api/get-auth');
+                const json = await res.json();
+
+                if (!json.data || !json.data.socket) throw new Error("Invalid API Data");
+
+                let wsUrl = json.data.socket;
+                
+                // Anti-Blocker: Coba bersihkan port jika terjadi error koneksi standar
+                connectWS(wsUrl, json.data.token);
+
+            } catch (err) {
+                appendLog("Error: " + err.message);
+            }
+        }
+
+        function connectWS(url, token) {
+            if (socket) socket.close();
+            
+            socket = new WebSocket(url);
+            const statusIndicator = document.getElementById('socket-status');
+
+            socket.onopen = () => {
+                socket.send(JSON.stringify({"event":"auth","args":[token]}));
+                statusIndicator.innerText = "CONNECTED";
+                statusIndicator.style.color = "var(--green)";
+                appendLog("WebSocket Link Active.");
+            };
+
+            socket.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                if (msg.event === 'stats') {
+                    const s = JSON.parse(msg.args[0]);
+                    updateUI(s);
+                }
+                if (msg.event === 'console output') {
+                    appendLog(msg.args[0]);
+                }
+            };
+
+            socket.onerror = () => {
+                // Jika gagal dengan port 8080, coba tanpa port (HTTPS 443)
+                if (url.includes(':8080')) {
+                    appendLog("Port 8080 blocked. Retrying with Standard HTTPS...");
+                    connectWS(url.replace(':8080', ''), token);
+                } else {
+                    appendLog("Critical connection failure.");
+                }
+            };
+
+            socket.onclose = () => {
+                statusIndicator.innerText = "RECONNECTING...";
+                statusIndicator.style.color = "var(--red)";
+                setTimeout(init, 5000);
+            };
+        }
+
+        function updateUI(s) {
+            document.getElementById('cpu').innerText = s.cpu_absolute.toFixed(1) + '%';
+            document.getElementById('ram').innerText = (s.memory_bytes/1024/1024).toFixed(0) + ' MB';
+            const statusEl = document.getElementById('status');
+            statusEl.innerText = s.state.toUpperCase();
+            statusEl.className = `stat ${s.state === 'running' ? 'status-online' : 'status-offline'}`;
+        }
+
+        async function power(sig) {
+            appendLog("Sending " + sig.toUpperCase() + " command...");
+            try {
+                const res = await fetch('/api/power', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ signal: sig })
+                });
+                if (res.ok) appendLog("Command accepted.");
+            } catch (err) {
+                appendLog("Command failed.");
+            }
+        }
+
+        function appendLog(t) {
+            const b = document.getElementById('log-box');
+            const l = document.createElement('div');
+            l.textContent = "> " + t;
+            b.appendChild(l);
+            b.scrollTop = b.scrollHeight;
+            if (b.childNodes.length > 40) b.removeChild(b.firstChild);
+        }
+
+        init();
+    </script>
+</body>
+</html>
